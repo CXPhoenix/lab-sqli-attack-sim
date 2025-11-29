@@ -1,0 +1,57 @@
+name: lab-sqli-attack-sim
+
+networks:
+  outnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 111.248.120.0/24
+
+include:
+  - ./inet-service/docker-compose.yaml
+
+services:
+  router:
+    image: nicolaka/netshoot:latest
+    restart: always # 若重啟 compose，sniffer 會自動恢復
+    tty: true
+    stdin_open: true
+    working_dir: /captures
+    volumes:
+      - ./captures:/captures # 將封包保存到宿主機目錄中
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      inet:
+        ipv4_address: 192.168.3.2
+      outnet:
+        ipv4_address: 111.248.120.159
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    healthcheck:
+      test: [ "CMD-SHELL", "ping -c 1 1.1.1.1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    # 自動啟動轉發（當作 router）及 tcpdump，捕獲整個 lab 網路流量
+    command: >
+      /bin/sh -c "
+        iptables -A FORWARD -j LOG --log-prefix ROUTER-FWD: --log-level 4 &&
+        iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && 
+        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
+        iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 8000 -j DNAT --to-destination 192.168.3.10:8000 &&
+        ip link && tcpdump -i any -w /captures/lab_$(date +%Y%m%d_%H%M%S).pcap
+      "
+
+  outnet-client:
+    build: ./outnet-client
+    depends_on:
+      router:
+        condition: service_healthy
+      inet-service:
+        condition: service_started
+    networks:
+      outnet:
+        ipv4_address: 111.248.120.11

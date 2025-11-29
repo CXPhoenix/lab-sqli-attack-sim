@@ -1,0 +1,20 @@
+FROM python:3.13-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies (curl for healthcheck/wait script)
+RUN apt-get update && apt-get install -y curl iputils-ping && rm -rf /var/lib/apt/lists/*
+
+# Install sqlmap
+RUN uv pip install --system setuptools sqlmap dirsearch
+
+# Copy attack script
+COPY attack.py /app/attack.py
+
+WORKDIR /app
+
+# Run the attack script
+CMD ["uv", "run", "attack.py"]

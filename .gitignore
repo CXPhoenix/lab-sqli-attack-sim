@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# For captures
+captures/lab_*.pcap
+
+# For MacOSX
+.DS_Store
+
+# For experiment environment
+*.sql
