@@ -42,7 +42,7 @@ services:
         iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && 
         iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
         iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 8000 -j DNAT --to-destination 192.168.3.10:8000 &&
-        ip link && tcpdump -i any -w /captures/lab_$(date +%Y%m%d_%H%M%S).pcap
+        ip link && tcpdump -i eth1 -w /captures/lab_$(date +%Y%m%d_%H%M%S).pcap
       "
 
   outnet-client:

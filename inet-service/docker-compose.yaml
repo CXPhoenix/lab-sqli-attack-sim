@@ -2,7 +2,10 @@ name: inet-service
 
 services:
   inet-service:
-    build: .
+    build:
+      context: .
+      args:
+        - ROUTER_IP=192.168.3.2
     restart: always
     environment:
       UVICORN_APP: "src.main:app"
@@ -16,6 +19,8 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    cap_add:
+      - NET_ADMIN
     networks:
       inet:
         ipv4_address: 192.168.3.10
